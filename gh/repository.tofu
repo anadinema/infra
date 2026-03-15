@@ -1,5 +1,4 @@
 # Create GitHub repositories with specific configurations
-# tf import 'github_repository.repositories["dotfiles"]' dotfiles
 resource "github_repository" "repositories" {
   for_each = { for repo in local.repositories : repo.name => repo }
 
@@ -22,7 +21,7 @@ resource "github_repository" "repositories" {
   delete_branch_on_merge      = true
   squash_merge_commit_title   = "PR_TITLE"
   squash_merge_commit_message = "PR_BODY"
-  allow_auto_merge = try(each.value.autoMergePr, false)
+  allow_auto_merge            = try(each.value.autoMergePr, false)
 
   allow_update_branch = true
 
@@ -128,4 +127,24 @@ resource "github_repository_collaborator" "user_access" {
   repository = github_repository.repositories[each.value.repo].name
   username   = each.value.username
   permission = each.value.permission
+}
+
+# Restrict the GitHub actions allowed to be used
+resource "github_actions_repository_permissions" "repository_whitelisted_actions" {
+  for_each = { for repo in local.repositories : repo.name => repo }
+
+  allowed_actions = "selected"
+  allowed_actions_config {
+    github_owned_allowed = true
+    patterns_allowed = [
+      "opentofu/*",
+    ]
+    verified_allowed     = true
+  }
+  repository = each.value.name
+
+  depends_on = [
+    github_repository.repositories,
+    github_repository_collaborator.user_access,
+  ]
 }

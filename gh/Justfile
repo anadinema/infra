@@ -1,0 +1,26 @@
+# Justfile for managing infrastructure with Tofu
+
+# Initilize the project setup
+@init:
+  echo "🚧 Initializing project setup..."
+  tofu init
+
+# Plan infrastructure changes
+@plan:
+  echo "🛠️ Planning infrastructure changes..."
+  tofu plan
+
+# Apply infrastructure changes
+@apply:
+  echo "✅ Apply infrastructure changes..."
+  tofu apply -auto-approve -parallelism=20
+
+# Reformat code
+@format:
+  echo "🎨 Formatting code..."
+  tofu fmt
+
+# Check code formatting
+@check-format:
+  echo "🔍 Checking code formatting..."
+  tofu fmt --check
