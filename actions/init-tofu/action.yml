@@ -5,19 +5,35 @@ inputs:
   version:
     description: 'Version of the OpenTofu to be used'
     required: true
+  aws-account-id:
+    description: 'AWS account ID to be used for OpenTofu backend and resources'
+    required: true
+  aws-iam-role-name:
+    description: 'Name of AWS IAM role for backend and resources'
+    required: true
+  aws-region:
+    description: 'AWS region for backend and resources'
+    required: true
 
 runs:
   using: 'composite'
   steps:
+    - name: initialize-variables
+      shell: bash
+      run: |
+        echo "TF_VAR_github_token=${ACCESS_TOKEN}" >> $GITHUB_ENV
+        echo "TF_VAR_onepass_sa_token=${ONE_PASSWORD_TOKEN}" >> $GITHUB_ENV
+
+    - name: configure-aws-credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: arn:aws:iam::${{ inputs.aws-account-id }}:role/${{ inputs.aws-iam-role-name }}
+        role-session-name: gha-session-${{ github.event.repository.name }}-${{ inputs.aws-iam-role-name }}-${{ github.run_id }}.${{ github.run_number}}.${{ github.run_attempt}}
+
     - name: setup-opentofu
       uses: opentofu/setup-opentofu@v1
       with:
         tofu_version: ${{ inputs.version }}
         tofu_wrapper: 'false'
 
-    - name: initialize-variables
-      shell: bash
-      run: |
-        echo "TOFU_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-        tofu init
-        

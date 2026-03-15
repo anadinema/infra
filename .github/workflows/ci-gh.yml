@@ -1,0 +1,27 @@
+name: ci-github
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ci-gh.yml'
+      - 'gh/**'
+
+jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@v6
+
+      - name: init-tofu
+        uses: anadinema/infra/actions/init-tofu@v1
+        with:
+          version: '1.11.4'
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+        env:
+          ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+          ONE_PASSWORD_TOKEN: ${{ secrets.ONE_PASSWORD_SA_TOKEN }}
+
+      - name: validate-tofu-configuration
+        run: tofu validate
