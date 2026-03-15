@@ -1,0 +1,23 @@
+name: 'init-opentofu'
+description: 'Initialize an OpenTofu project'
+
+inputs:
+  version:
+    description: 'Version of the OpenTofu to be used'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: setup-opentofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ inputs.version }}
+        tofu_wrapper: 'false'
+
+    - name: initialize-variables
+      shell: bash
+      run: |
+        echo "TOFU_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+        tofu init
+        

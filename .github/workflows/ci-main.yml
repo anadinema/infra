@@ -1,0 +1,20 @@
+name: ci-main.yml
+on:
+  workflow_dispatch:
+
+
+jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@v6
+
+      - name: init-tofu
+        uses: anadinema/infra/actions/init-tofu@v1
+        with:
+          version: '1.11.4'
+
+      - name: Validate OpenTofu configuration
+        run: tofu validate
