@@ -8,17 +8,20 @@
 # Plan infrastructure changes
 @plan:
   echo "🛠️ Planning infrastructure changes..."
-  tofu plan
+  tofu plan -parallelism=50
 
 # Apply infrastructure changes
 @apply:
   echo "✅ Apply infrastructure changes..."
-  tofu apply -auto-approve -parallelism=20
+  tofu apply -auto-approve -parallelism=50
 
 # Reformat code
 @format:
   echo "🎨 Formatting code..."
   tofu fmt
+
+# Reformat code
+@fmt: format
 
 # Check code formatting
 @check-format:

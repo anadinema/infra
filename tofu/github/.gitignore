@@ -20,7 +20,6 @@ override.tf.json
 
 # Ignore local Terraform CLI files
 .terraform/
-.terraform.lock.hcl
 
 # Ignore temporary or OS-specific files
 .DS_Store

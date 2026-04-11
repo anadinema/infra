@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to create an IAM role for deployments, an S3 bucket for state storage, and the required IAM policies.
+
+Parameters:
+  DeployerRoleSub:
+    Type: String
+    Description: The subject to limit actions for GitHub OIDC tokens.
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: "https://token.actions.githubusercontent.com"
+      ClientIdList:
+        - sts.amazonaws.com
+
+  DeployerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-deployer-oidc"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Ref DeployerRoleSub
+                token.actions.githubusercontent.com:aud: "sts.amazonaws.com"
+      ManagedPolicyArns:
+        - !Ref DeployerRolePolicy
+
+  DeployerRolePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Policy for allowing CI/CD tools to deploy resources in AWS
+      ManagedPolicyName: DeployerPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            NotAction:
+              - "iam:*"
+              - "organizations:*"
+              - "account:*"
+            Resource: "*"
+            Sid: SelectiveAllowance
+          - Effect: Allow
+            Action:
+              - "iam:CreateRole"
+              - "iam:UpdateAssumeRolePolicy"
+              - "iam:GetPolicyVersion"
+              - "iam:CreateServiceSpecificCredential"
+              - "iam:ListRoleTags"
+              - "iam:DeleteGroup"
+              - "iam:RemoveRoleFromInstanceProfile"
+              - "iam:UpdateGroup"
+              - "iam:AttachRolePolicy"
+              - "iam:PutRolePolicy"
+              - "iam:AddRoleToInstanceProfile"
+              - "iam:DetachRolePolicy"
+              - "iam:ListAttachedRolePolicies"
+              - "iam:CreateAccountAlias"
+              - "iam:DetachGroupPolicy"
+              - "iam:ListRolePolicies"
+              - "iam:PutGroupPolicy"
+              - "iam:ListPolicies"
+              - "iam:UpdateServiceSpecificCredential"
+              - "iam:GetRole"
+              - "iam:CreateGroup"
+              - "iam:GetPolicy"
+              - "iam:GetAccessKeyLastUsed"
+              - "iam:ListEntitiesForPolicy"
+              - "iam:DeleteRole"
+              - "iam:UpdateRoleDescription"
+              - "iam:GetUserPolicy"
+              - "iam:ListGroupsForUser"
+              - "iam:DeleteServiceLinkedRole"
+              - "iam:GetGroupPolicy"
+              - "iam:GetRolePolicy"
+              - "iam:CreateInstanceProfile"
+              - "iam:UntagRole"
+              - "iam:PutRolePermissionsBoundary"
+              - "iam:TagRole"
+              - "iam:ListPoliciesGrantingServiceAccess"
+              - "iam:ResetServiceSpecificCredential"
+              - "iam:DeletePolicy"
+              - "iam:DeleteRolePermissionsBoundary"
+              - "iam:GetGroup"
+              - "iam:GetServiceLinkedRoleDeletionStatus"
+              - "iam:ListInstanceProfilesForRole"
+              - "iam:PassRole"
+              - "iam:AddUserToGroup"
+              - "iam:RemoveUserFromGroup"
+              - "iam:DeleteRolePolicy"
+              - "iam:ListAttachedUserPolicies"
+              - "iam:ListAttachedGroupPolicies"
+              - "iam:DeleteAccountAlias"
+              - "iam:CreatePolicyVersion"
+              - "iam:DeleteInstanceProfile"
+              - "iam:GetInstanceProfile"
+              - "iam:ListGroupPolicies"
+              - "iam:ListRoles"
+              - "iam:ListUserPolicies"
+              - "iam:ListInstanceProfiles"
+              - "iam:TagUser"
+              - "iam:CreatePolicy"
+              - "iam:UntagUser"
+              - "iam:CreateServiceLinkedRole"
+              - "iam:ListPolicyVersions"
+              - "iam:AttachGroupPolicy"
+              - "iam:ListAccountAliases"
+              - "iam:ListUsers"
+              - "iam:UpdateRole"
+              - "iam:GetUser"
+              - "iam:ListGroups"
+              - "iam:DeleteGroupPolicy"
+              - "iam:DeleteServiceSpecificCredential"
+              - "iam:DeletePolicyVersion"
+              - "iam:SetDefaultPolicyVersion"
+              - "iam:ListUserTags"
+              - "organizations:ListAccounts"
+              - "organizations:ListDelegatedAdministrators"
+            Resource: "*"
+            Sid: IAMAllowance
+          - Effect: Allow
+            Action:
+              - "kms:*"
+            Resource: "*"
+            Sid: KMSAllowance
+

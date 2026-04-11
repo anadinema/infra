@@ -1,2 +1,2 @@
 # infra
-Common infrastructure, workflows, action, etc., eg. repositories, cloudflare settings, actions for other repos
+Common infrastructure, github repos, settings, rules, etc., eg. repositories, cloudflare settings, cloudformation templates.

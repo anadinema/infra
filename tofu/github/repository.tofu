@@ -2,16 +2,15 @@
 resource "github_repository" "repositories" {
   for_each = { for repo in local.repositories : repo.name => repo }
 
-  name             = each.value.name
-  description      = each.value.description
-  homepage_url     = try(each.value.homepage, null)
-  license_template = "mit"
-  visibility       = try(each.value.visibility, "public")
+  name         = each.value.name
+  description  = each.value.description
+  homepage_url = try(each.value.homepage, null)
+  visibility   = try(each.value.visibility, "public")
 
-  has_projects    = false
-  has_issues      = true
-  has_wiki        = try(each.value.enableWiki, false)
-  has_discussions = false
+  has_projects    = try(each.value.enable_projects, false)
+  has_issues      = try(each.value.enable_issues, true)
+  has_wiki        = try(each.value.enable_wiki, false)
+  has_discussions = try(each.value.enable_discussions, false)
 
   # Needed to set a default branch
   auto_init = true
@@ -21,7 +20,7 @@ resource "github_repository" "repositories" {
   delete_branch_on_merge      = true
   squash_merge_commit_title   = "PR_TITLE"
   squash_merge_commit_message = "PR_BODY"
-  allow_auto_merge            = try(each.value.autoMergePr, false)
+  allow_auto_merge            = try(each.value.enable_auto_merge, false)
 
   allow_update_branch = true
 
@@ -32,6 +31,17 @@ resource "github_repository" "repositories" {
   archive_on_destroy = false
 
   vulnerability_alerts = false
+
+  dynamic "pages" {
+    for_each = try(each.value.pages, false) ? [1] : []
+    content {
+      build_type = "workflow"
+      source {
+        branch = "main"
+        path   = "/"
+      }
+    }
+  }
 
   dynamic "security_and_analysis" {
     for_each = try(each.value.visibility, "public") == "public" ? [1] : []
@@ -48,17 +58,35 @@ resource "github_repository" "repositories" {
     }
   }
 
+  lifecycle {
+    ignore_changes = [
+      vulnerability_alerts,
+      pages[0].cname
+    ]
+  }
+
 }
 
 
-resource "github_repository_file" "add_code_owners_file" {
-  for_each = { for repo in local.repositories : repo.name => repo }
+resource "github_repository_file" "managed_template_files" {
+  for_each = {
+    for file in local.repo_managed_template_files :
+    "${file.repo}:${file.template_relative_path}" => file
+  }
 
-  repository          = github_repository.repositories[each.key].name
-  file                = ".github/CODEOWNERS"
-  branch              = "main"
-  content             = format("* @%s", local.owner_user)
-  commit_message      = "[skip ci] Add CODEOWNERS file"
+  repository = github_repository.repositories[each.value.repo].name
+  file       = each.value.destination_path
+  branch     = "main"
+
+  content = (
+    each.value.is_tftpl
+    ? templatefile(each.value.source_path, {
+      variables = each.value.template_vars
+    })
+    : file(each.value.source_path)
+  )
+
+  commit_message      = format("🎨 chore(infra): render template: %s [no ci]", each.value.template_relative_path)
   overwrite_on_create = true
 }
 
@@ -138,8 +166,10 @@ resource "github_actions_repository_permissions" "repository_whitelisted_actions
     github_owned_allowed = true
     patterns_allowed = [
       "opentofu/*",
+      "dtolnay/rust-toolchain@stable",
+      "swatinem/rust-cache@v*",
     ]
-    verified_allowed     = true
+    verified_allowed = true
   }
   repository = each.value.name
 

@@ -13,7 +13,7 @@ Thumbs.db
 .vscode/
 *.iml
 
-init/*.local.*
-init/
-
-cloudflare/
+# Not yet ready to be committed
+cfn/init/*.local.*
+cfn/init/
+tofu/cloudflare/
